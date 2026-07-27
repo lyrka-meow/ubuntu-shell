@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+REPOSITORY_URL="https://github.com/lyrka-meow/ubuntu-shell.git"
+INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/ubuntu-shell"
+BIN_DIR="${HOME}/.local/bin"
+
+if [[ ! -r /etc/os-release ]]; then
+  echo "Cannot detect the operating system." >&2
+  exit 1
+fi
+
+# shellcheck disable=SC1091
+source /etc/os-release
+if [[ "${ID_LIKE:-} ${ID:-}" != *arch* ]]; then
+  echo "This installer currently supports Arch Linux and Arch-based systems." >&2
+  exit 1
+fi
+
+if ! command -v git >/dev/null; then
+  sudo pacman -S --needed --noconfirm git
+fi
+
+if ! command -v docker >/dev/null; then
+  sudo pacman -S --needed --noconfirm docker docker-compose
+fi
+
+sudo systemctl enable --now docker
+
+if [[ -d "$INSTALL_DIR/.git" ]]; then
+  git -C "$INSTALL_DIR" pull --ff-only
+elif [[ -e "$INSTALL_DIR" ]]; then
+  echo "$INSTALL_DIR already exists and is not a Git repository." >&2
+  exit 1
+else
+  git clone "$REPOSITORY_URL" "$INSTALL_DIR"
+fi
+
+mkdir -p "$BIN_DIR"
+ln -sfn "$INSTALL_DIR/installer/ubuntu-shell" "$BIN_DIR/ubuntu-shell"
+
+if ! id -nG "$USER" | tr ' ' '\n' | grep -qx docker; then
+  sudo usermod -aG docker "$USER"
+  echo
+  echo "Docker group access was enabled."
+  echo "Log out and back in, then run: ubuntu-shell"
+else
+  docker compose -f "$INSTALL_DIR/compose.yaml" up -d --build
+  echo
+  echo "Installed successfully. Run: ubuntu-shell"
+fi
+
+case ":$PATH:" in
+  *":$BIN_DIR:"*) ;;
+  *) echo "If the command is not found, add $BIN_DIR to PATH." ;;
+esac

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/ubuntu-shell"
+
+if ! docker info >/dev/null 2>&1; then
+  echo "Docker is unavailable. Log out and back in, then try again." >&2
+  exit 1
+fi
+
+docker compose -f "$INSTALL_DIR/compose.yaml" up -d --build
+exec docker compose -f "$INSTALL_DIR/compose.yaml" exec ubuntu bash
