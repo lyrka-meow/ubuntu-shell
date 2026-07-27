@@ -8,5 +8,14 @@ if ! docker info >/dev/null 2>&1; then
   exit 1
 fi
 
-docker compose -f "$INSTALL_DIR/compose.yaml" up -d --build
+if ! docker compose -f "$INSTALL_DIR/compose.yaml" ps --status running --quiet |
+  grep -q .; then
+  if ! start_output="$(
+    docker compose -f "$INSTALL_DIR/compose.yaml" up -d 2>&1
+  )"; then
+    echo "$start_output" >&2
+    exit 1
+  fi
+fi
+
 exec docker compose -f "$INSTALL_DIR/compose.yaml" exec ubuntu bash
