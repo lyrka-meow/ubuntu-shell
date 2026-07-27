@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 REPOSITORY_URL="https://github.com/lyrka-meow/ubuntu-shell.git"
 INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/ubuntu-shell"
-BIN_DIR="${HOME}/.local/bin"
+COMMAND_PATH="/usr/local/bin/ubuntu-shell"
 
 if [[ ! -r /etc/os-release ]]; then
   echo "Cannot detect the operating system." >&2
@@ -36,8 +36,7 @@ else
   git clone "$REPOSITORY_URL" "$INSTALL_DIR"
 fi
 
-mkdir -p "$BIN_DIR"
-ln -sfn "$INSTALL_DIR/installer/ubuntu-shell" "$BIN_DIR/ubuntu-shell"
+sudo ln -sfn "$INSTALL_DIR/installer/ubuntu-shell" "$COMMAND_PATH"
 
 if ! id -nG "$USER" | tr ' ' '\n' | grep -qx docker; then
   sudo usermod -aG docker "$USER"
@@ -49,8 +48,3 @@ else
   echo
   echo "Installed successfully. Run: ubuntu-shell"
 fi
-
-case ":$PATH:" in
-  *":$BIN_DIR:"*) ;;
-  *) echo "If the command is not found, add $BIN_DIR to PATH." ;;
-esac
