@@ -18,6 +18,6 @@ RUN apt-get update \
     && chmod 0440 /etc/sudoers.d/ubuntu
 
 USER ubuntu
-WORKDIR /workspace
+WORKDIR /home/ubuntu
 
 CMD ["sleep", "infinity"]

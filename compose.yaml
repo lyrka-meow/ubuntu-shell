@@ -7,7 +7,6 @@ services:
     stdin_open: true
     tty: true
     volumes:
-      - .:/workspace
       - ubuntu-home:/home/ubuntu
 
 volumes:

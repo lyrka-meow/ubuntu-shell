@@ -57,8 +57,8 @@ sudo apt update
 sudo apt install htop
 ```
 
-The repository is mounted at `/workspace`. The `/home/ubuntu` directory is
-stored in a Docker volume, so files there survive container recreation.
+The shell opens in `/home/ubuntu`. This directory is stored in a Docker volume,
+so files there survive container recreation.
 
 ## Commands
 
