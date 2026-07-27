@@ -3,8 +3,10 @@ set -Eeuo pipefail
 
 REPOSITORY_URL="https://github.com/lyrka-meow/ubuntu-shell.git"
 INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/ubuntu-shell"
-COMMAND_PATH="/usr/local/bin/ubuntu-shell"
+BIN_DIR="${HOME}/bin"
+COMMAND_PATH="${BIN_DIR}/ubuntu-shell"
 OLD_COMMAND_PATH="${HOME}/.local/bin/ubuntu-shell"
+SYSTEM_COMMAND_PATH="/usr/local/bin/ubuntu-shell"
 
 if [[ ! -r /etc/os-release ]]; then
   echo "Cannot detect the operating system." >&2
@@ -37,9 +39,13 @@ else
   git clone "$REPOSITORY_URL" "$INSTALL_DIR"
 fi
 
-sudo ln -sfn "$INSTALL_DIR/installer/ubuntu-shell" "$COMMAND_PATH"
+mkdir -p "$BIN_DIR"
+ln -sfn "$INSTALL_DIR/installer/ubuntu-shell" "$COMMAND_PATH"
 if [[ -L "$OLD_COMMAND_PATH" ]]; then
   unlink "$OLD_COMMAND_PATH"
+fi
+if [[ -L "$SYSTEM_COMMAND_PATH" ]]; then
+  sudo unlink "$SYSTEM_COMMAND_PATH"
 fi
 
 if ! id -nG | tr ' ' '\n' | grep -qx docker; then
