@@ -1,0 +1,14 @@
+services:
+  ubuntu:
+    build:
+      context: .
+    hostname: ubuntu-shell
+    init: true
+    stdin_open: true
+    tty: true
+    volumes:
+      - .:/workspace
+      - ubuntu-home:/home/ubuntu
+
+volumes:
+  ubuntu-home:
