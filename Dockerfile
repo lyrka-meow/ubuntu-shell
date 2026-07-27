@@ -13,7 +13,7 @@ RUN apt-get update \
         sudo \
         vim-tiny \
     && rm -rf /var/lib/apt/lists/* \
-    && useradd --create-home --shell /bin/bash ubuntu \
+    && (id -u ubuntu >/dev/null 2>&1 || useradd --create-home --shell /bin/bash ubuntu) \
     && echo "ubuntu ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/ubuntu \
     && chmod 0440 /etc/sudoers.d/ubuntu
 
