@@ -20,7 +20,7 @@ jobs:
         run: pacman -Syu --noconfirm git github-cli
 
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Validate release version
         if: github.ref_type == 'tag'
@@ -39,7 +39,9 @@ jobs:
           useradd --create-home builder
           chown -R builder:builder "$GITHUB_WORKSPACE"
           runuser -u builder -- makepkg --cleanbuild --nodeps --noconfirm
-          package_path="$(runuser -u builder -- makepkg --packagelist)"
+          package_path="$(find "$PWD" -maxdepth 1 -type f \
+            -name 'ubuntu-shell-*.pkg.tar.zst' -print -quit)"
+          test -n "$package_path"
           test -f "$package_path"
           echo "path=$package_path" >> "$GITHUB_OUTPUT"
           echo "name=$(basename "$package_path")" >> "$GITHUB_OUTPUT"
@@ -53,7 +55,7 @@ jobs:
           bsdtar -tf "$package" | grep -Fx 'usr/share/ubuntu-shell/compose.yaml'
 
       - name: Upload workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.build.outputs.name }}
           path: ${{ steps.build.outputs.path }}
