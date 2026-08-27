@@ -1,5 +1,5 @@
 pkgname=ubuntu-shell
-pkgver=1.0.6
+pkgver=1.0.7
 pkgrel=1
 pkgdesc='Persistent Ubuntu Server-like shell running in Docker'
 arch=('x86_64')
