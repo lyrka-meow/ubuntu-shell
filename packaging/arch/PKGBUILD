@@ -5,7 +5,8 @@ pkgdesc='Persistent Ubuntu Server-like shell running in Docker'
 arch=('x86_64')
 url='https://github.com/lyrka-meow/ubuntu-shell'
 license=('GPL-3.0-only')
-depends=('bash' 'docker' 'docker-buildx' 'docker-compose' 'sudo' 'util-linux')
+depends=('bash' 'coreutils' 'docker' 'docker-buildx' 'docker-compose' 'sudo'
+         'util-linux')
 makedepends=('git')
 install=ubuntu-shell.install
 source=("$pkgname::git+$url.git#tag=v$pkgver")

@@ -106,14 +106,31 @@ require_docker() {
 
 start_container() {
   local build_options=()
+  local config_hash
+  local image_hash
 
-  if "${COMPOSE[@]}" images --quiet ubuntu | grep -q .; then
-    build_options+=(--quiet-build)
+  config_hash="$(
+    sha256sum "$INSTALL_DIR/Dockerfile" "$INSTALL_DIR/compose.yaml" |
+      cut -d ' ' -f 1 |
+      sha256sum
+  )"
+  config_hash="${config_hash%% *}"
+  export UBUNTU_SHELL_CONFIG_HASH="$config_hash"
+
+  image_hash="$(
+    docker image inspect ubuntu-shell-ubuntu:latest \
+      --format '{{ index .Config.Labels "io.github.lyrka-meow.ubuntu-shell.config-hash" }}' \
+      2>/dev/null || true
+  )"
+
+  if [[ "$image_hash" == "$config_hash" ]]; then
+    build_options=(--no-build)
   else
+    build_options=(--build)
     echo "Building the Ubuntu Shell image for the first launch..." >&2
   fi
 
-  if ! "${COMPOSE[@]}" up -d --build "${build_options[@]}"; then
+  if ! "${COMPOSE[@]}" up -d "${build_options[@]}"; then
     echo "Could not start the Ubuntu Shell container." >&2
     exit 1
   fi

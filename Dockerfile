@@ -1,8 +1,10 @@
 FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
+ARG UBUNTU_SHELL_CONFIG_HASH=unknown
 ARG FASTFETCH_VERSION=2.66.0
 ARG FASTFETCH_SHA256=c4aa1de46874524cdc492795d937772281409fa86aea377cae6832d9e70218cb
+LABEL io.github.lyrka-meow.ubuntu-shell.config-hash="${UBUNTU_SHELL_CONFIG_HASH}"
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \

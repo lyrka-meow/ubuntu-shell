@@ -2,6 +2,8 @@ services:
   ubuntu:
     build:
       context: .
+      args:
+        UBUNTU_SHELL_CONFIG_HASH: ${UBUNTU_SHELL_CONFIG_HASH:-unknown}
     hostname: ubuntu-shell
     init: true
     stdin_open: true
