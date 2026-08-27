@@ -1,16 +1,21 @@
-.PHONY: build up shell stop clean
+.PHONY: build up shell stop clean package
+
+COMPOSE = docker compose --project-name ubuntu-shell
 
 build:
-	docker compose build
+	$(COMPOSE) build
 
 up:
-	docker compose up -d --build
+	$(COMPOSE) up -d --build
 
 shell: up
-	docker compose exec ubuntu bash
+	$(COMPOSE) exec ubuntu bash
 
 stop:
-	docker compose down
+	$(COMPOSE) down
 
 clean:
-	docker compose down --volumes
+	$(COMPOSE) down --volumes --rmi local
+
+package:
+	$(MAKE) -C packaging/arch package

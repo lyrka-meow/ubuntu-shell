@@ -1,0 +1,77 @@
+name: Build Arch Linux package
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    name: Build .pkg.tar.zst
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+
+    steps:
+      - name: Install build tools
+        run: pacman -Syu --noconfirm git github-cli
+
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Validate release version
+        if: github.ref_type == 'tag'
+        working-directory: packaging/arch
+        run: |
+          pkgver="$(bash -c 'source ./PKGBUILD; printf "%s" "$pkgver"')"
+          test "v${pkgver}" = "$GITHUB_REF_NAME" || {
+            echo "PKGBUILD version v${pkgver} does not match tag $GITHUB_REF_NAME" >&2
+            exit 1
+          }
+
+      - name: Build package
+        id: build
+        working-directory: packaging/arch
+        run: |
+          useradd --create-home builder
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+          runuser -u builder -- makepkg --cleanbuild --nodeps --noconfirm
+          package_path="$(runuser -u builder -- makepkg --packagelist)"
+          test -f "$package_path"
+          echo "path=$package_path" >> "$GITHUB_OUTPUT"
+          echo "name=$(basename "$package_path")" >> "$GITHUB_OUTPUT"
+
+      - name: Inspect package
+        run: |
+          package='${{ steps.build.outputs.path }}'
+          pacman -Qip "$package"
+          bsdtar -tf "$package" | grep -Fx 'usr/bin/ubuntu-shell'
+          bsdtar -tf "$package" | grep -Fx 'usr/share/ubuntu-shell/Dockerfile'
+          bsdtar -tf "$package" | grep -Fx 'usr/share/ubuntu-shell/compose.yaml'
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.build.outputs.name }}
+          path: ${{ steps.build.outputs.path }}
+          if-no-files-found: error
+
+      - name: Create GitHub Release and upload package
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$GITHUB_REF_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "Ubuntu Shell $GITHUB_REF_NAME" \
+              --generate-notes
+          fi
+          gh release upload "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            '${{ steps.build.outputs.path }}' \
+            --clobber

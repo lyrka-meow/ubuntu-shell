@@ -1,0 +1,13 @@
+post_install() {
+  cat <<'EOF'
+
+Ubuntu Shell was installed.
+
+Enable Docker and grant access to your user:
+  sudo systemctl enable --now docker
+  sudo usermod -aG docker "$USER"
+
+Log out and back in once, then run:
+  ubuntu-shell
+EOF
+}

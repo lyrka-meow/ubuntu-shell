@@ -1,0 +1,25 @@
+pkgname=ubuntu-shell
+pkgver=1.0.0
+pkgrel=1
+pkgdesc='Persistent Ubuntu Server-like shell running in Docker'
+arch=('x86_64')
+url='https://github.com/lyrka-meow/ubuntu-shell'
+license=('GPL-3.0-only')
+depends=('bash' 'docker' 'docker-compose')
+makedepends=('git')
+install=ubuntu-shell.install
+source=("$pkgname::git+$url.git#tag=v$pkgver")
+sha256sums=('SKIP')
+
+package() {
+  install -Dm755 "$srcdir/$pkgname/installer/ubuntu-shell" \
+    "$pkgdir/usr/bin/ubuntu-shell"
+  install -Dm644 "$srcdir/$pkgname/Dockerfile" \
+    "$pkgdir/usr/share/ubuntu-shell/Dockerfile"
+  install -Dm644 "$srcdir/$pkgname/compose.yaml" \
+    "$pkgdir/usr/share/ubuntu-shell/compose.yaml"
+  install -Dm644 "$srcdir/$pkgname/README.md" \
+    "$pkgdir/usr/share/doc/ubuntu-shell/README.md"
+  install -Dm644 "$srcdir/$pkgname/LICENSE" \
+    "$pkgdir/usr/share/licenses/ubuntu-shell/LICENSE"
+}

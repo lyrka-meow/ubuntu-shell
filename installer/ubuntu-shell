@@ -1,21 +1,112 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/ubuntu-shell"
+SCRIPT_PATH="$(readlink -f -- "${BASH_SOURCE[0]}")"
+SOURCE_INSTALL_DIR="$(dirname -- "$(dirname -- "$SCRIPT_PATH")")"
+SYSTEM_INSTALL_DIR="/usr/share/ubuntu-shell"
 
-if ! docker info >/dev/null 2>&1; then
-  echo "Docker is unavailable. Log out and back in, then try again." >&2
-  exit 1
+if [[ -f "$SOURCE_INSTALL_DIR/compose.yaml" &&
+      -f "$SOURCE_INSTALL_DIR/Dockerfile" ]]; then
+  INSTALL_DIR="$SOURCE_INSTALL_DIR"
+else
+  INSTALL_DIR="$SYSTEM_INSTALL_DIR"
 fi
 
-if ! docker compose -f "$INSTALL_DIR/compose.yaml" ps --status running --quiet |
-  grep -q .; then
-  if ! start_output="$(
-    docker compose -f "$INSTALL_DIR/compose.yaml" up -d 2>&1
-  )"; then
+COMPOSE=(
+  docker compose
+  --project-name ubuntu-shell
+  --file "$INSTALL_DIR/compose.yaml"
+)
+
+usage() {
+  cat <<'EOF'
+Usage: ubuntu-shell [command]
+
+Commands:
+  shell     Start the container and open the Ubuntu shell (default)
+  start     Start or update the container without opening a shell
+  status    Show the container status
+  stop      Stop and remove the container, preserving the home volume
+  clean     Remove the container, image and persistent home volume
+  help      Show this help
+EOF
+}
+
+require_installation() {
+  if [[ ! -r "$INSTALL_DIR/compose.yaml" ||
+        ! -r "$INSTALL_DIR/Dockerfile" ]]; then
+    echo "Ubuntu Shell installation is incomplete: $INSTALL_DIR" >&2
+    exit 1
+  fi
+}
+
+require_docker() {
+  if ! command -v docker >/dev/null 2>&1; then
+    echo "Docker is not installed." >&2
+    exit 1
+  fi
+
+  if ! docker compose version >/dev/null 2>&1; then
+    echo "The Docker Compose plugin is not installed." >&2
+    exit 1
+  fi
+
+  if ! docker info >/dev/null 2>&1; then
+    cat >&2 <<'EOF'
+Docker is unavailable to the current user.
+
+Start Docker:
+  sudo systemctl enable --now docker
+
+Grant access to your user, then log out and back in:
+  sudo usermod -aG docker "$USER"
+EOF
+    exit 1
+  fi
+}
+
+start_container() {
+  local start_output
+
+  if ! start_output="$("${COMPOSE[@]}" up -d --build 2>&1)"; then
     echo "$start_output" >&2
     exit 1
   fi
-fi
+}
 
-exec docker compose -f "$INSTALL_DIR/compose.yaml" exec ubuntu bash
+case "${1:-shell}" in
+  help|-h|--help)
+    usage
+    exit 0
+    ;;
+  shell|start|status|stop|clean)
+    command_name="${1:-shell}"
+    ;;
+  *)
+    echo "Unknown command: $1" >&2
+    usage >&2
+    exit 2
+    ;;
+esac
+
+require_installation
+require_docker
+
+case "$command_name" in
+  shell)
+    start_container
+    exec "${COMPOSE[@]}" exec ubuntu bash
+    ;;
+  start)
+    start_container
+    ;;
+  status)
+    exec "${COMPOSE[@]}" ps
+    ;;
+  stop)
+    exec "${COMPOSE[@]}" down
+    ;;
+  clean)
+    exec "${COMPOSE[@]}" down --volumes --rmi local
+    ;;
+esac

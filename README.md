@@ -2,39 +2,87 @@
 
 A persistent Ubuntu Server-like shell running in a Docker container.
 
-## Requirements
+## Install on Arch Linux
 
-- Docker
-- Docker Compose plugin
-
-On Arch Linux:
+Download the latest `ubuntu-shell-*.pkg.tar.zst` file from
+[GitHub Releases](https://github.com/lyrka-meow/ubuntu-shell/releases), then
+install it with pacman:
 
 ```bash
-sudo pacman -S docker docker-compose
+sudo pacman -U ./ubuntu-shell-1.0.0-1-x86_64.pkg.tar.zst
+```
+
+Enable Docker and grant your user access to it:
+
+```bash
 sudo systemctl enable --now docker
 sudo usermod -aG docker "$USER"
 ```
 
-Log out and back in after adding yourself to the `docker` group.
-
-## Start and connect
-
-### One-command installation on Arch Linux
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/lyrka-meow/ubuntu-shell/main/installer/install.sh | bash
-```
-
-After installation, open the Ubuntu shell with:
+Log out and back in once after adding yourself to the `docker` group. Then open
+the Ubuntu shell:
 
 ```bash
 ubuntu-shell
 ```
 
-If the installer adds you to the `docker` group, log out and back in once
-before running the command.
+Docker and the Docker Compose plugin are installed automatically as package
+dependencies. The first launch builds the Ubuntu image and can take a few
+minutes. Later launches reuse Docker's build cache.
 
-### Manual installation
+## Commands
+
+```text
+ubuntu-shell          Start the container and open the Ubuntu shell
+ubuntu-shell start    Start or update the container
+ubuntu-shell status   Show the container status
+ubuntu-shell stop     Stop the container and preserve its data
+ubuntu-shell clean    Remove the container, image and persistent home volume
+ubuntu-shell help     Show command help
+```
+
+The shell opens in `/home/ubuntu`. This directory is stored in a Docker volume,
+so files there survive container recreation, package updates and package
+removal. Running `ubuntu-shell clean` deletes that persistent data.
+
+Inside the container, use `sudo` when root access is required:
+
+```bash
+sudo apt update
+sudo apt install htop
+```
+
+## Uninstall
+
+To remove the container, image and persistent data first:
+
+```bash
+ubuntu-shell clean
+```
+
+Remove the Arch package:
+
+```bash
+sudo pacman -Rns ubuntu-shell
+```
+
+Omit `ubuntu-shell clean` if you want the persistent Docker volume to remain
+available for a later reinstall.
+
+## Build the Arch package
+
+Release packages are built automatically when a tag such as `v1.0.0` is
+pushed. To build the package manually from a tagged checkout:
+
+```bash
+cd packaging/arch
+makepkg --syncdeps --cleanbuild
+```
+
+The resulting file is named like
+`ubuntu-shell-1.0.0-1-x86_64.pkg.tar.zst`.
+
+## Run from source
 
 ```bash
 git clone https://github.com/lyrka-meow/ubuntu-shell.git
@@ -42,42 +90,10 @@ cd ubuntu-shell
 make shell
 ```
 
-Or without `make`:
+The legacy curl installer remains available for existing installations:
 
 ```bash
-docker compose up -d --build
-docker compose exec ubuntu bash
+curl -fsSL https://raw.githubusercontent.com/lyrka-meow/ubuntu-shell/main/installer/install.sh | bash
 ```
 
-The container runs as the `ubuntu` user. Use `sudo` when root access is
-required:
-
-```bash
-sudo apt update
-sudo apt install htop
-```
-
-The shell opens in `/home/ubuntu`. This directory is stored in a Docker volume,
-so files there survive container recreation.
-
-## Commands
-
-```bash
-make shell  # start the container and open Bash
-make stop   # stop the container
-make clean  # stop it and delete the persistent home volume
-```
-
-## Uninstall
-
-Remove Ubuntu Shell, its image and persistent data while keeping Docker:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/lyrka-meow/ubuntu-shell/main/installer/uninstall.sh | bash
-```
-
-To remove Docker as well:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/lyrka-meow/ubuntu-shell/main/installer/uninstall.sh | bash -s -- --remove-docker
-```
+Use `installer/uninstall.sh` to remove a legacy installation.

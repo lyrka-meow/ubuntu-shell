@@ -7,7 +7,10 @@ OLD_COMMAND_PATH="${HOME}/.local/bin/ubuntu-shell"
 SYSTEM_COMMAND_PATH="/usr/local/bin/ubuntu-shell"
 
 if [[ -f "$INSTALL_DIR/compose.yaml" ]] && command -v docker >/dev/null; then
-  docker compose -f "$INSTALL_DIR/compose.yaml" down --volumes --rmi local || true
+  docker compose \
+    --project-name ubuntu-shell \
+    --file "$INSTALL_DIR/compose.yaml" \
+    down --volumes --rmi local || true
 fi
 
 if [[ -L "$COMMAND_PATH" ]]; then
