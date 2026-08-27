@@ -3,11 +3,10 @@ post_install() {
 
 Ubuntu Shell was installed.
 
-Enable Docker and grant access to your user:
-  sudo systemctl enable --now docker
-  sudo usermod -aG docker "$USER"
-
-Log out and back in once, then run:
+Run:
   ubuntu-shell
+
+The first launch configures Docker automatically and may ask for your sudo
+password. Later logins will run without sudo.
 EOF
 }
