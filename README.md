@@ -9,7 +9,7 @@ Download the latest `ubuntu-shell-*.pkg.tar.zst` file from
 install it with pacman:
 
 ```bash
-sudo pacman -U ./ubuntu-shell-1.0.1-1-x86_64.pkg.tar.zst
+sudo pacman -U ./ubuntu-shell-1.0.2-1-x86_64.pkg.tar.zst
 ```
 
 Enable Docker and grant your user access to it:
@@ -71,7 +71,7 @@ available for a later reinstall.
 
 ## Build the Arch package
 
-Release packages are built automatically when a tag such as `v1.0.1` is
+Release packages are built automatically when a tag such as `v1.0.2` is
 pushed. To build the package manually from a tagged checkout:
 
 ```bash
@@ -80,7 +80,7 @@ makepkg --syncdeps --cleanbuild
 ```
 
 The resulting file is named like
-`ubuntu-shell-1.0.1-1-x86_64.pkg.tar.zst`.
+`ubuntu-shell-1.0.2-1-x86_64.pkg.tar.zst`.
 
 ## Run from source
 

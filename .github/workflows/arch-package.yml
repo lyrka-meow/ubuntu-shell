@@ -10,14 +10,43 @@ permissions:
   contents: write
 
 jobs:
+  smoke-test:
+    name: Test Ubuntu container
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Start Ubuntu Shell
+        run: ./installer/ubuntu-shell start
+
+      - name: Verify container
+        run: |
+          docker compose --project-name ubuntu-shell exec -T ubuntu bash -lc '
+            test "$(id -un)" = ubuntu
+            test "$PWD" = /home/ubuntu
+            sudo -n true
+            fastfetch --version
+          '
+
+      - name: Clean up container
+        if: always()
+        run: ./installer/ubuntu-shell clean
+
   package:
     name: Build .pkg.tar.zst
+    needs: smoke-test
     runs-on: ubuntu-latest
     container: archlinux:base-devel
 
     steps:
       - name: Install build tools
-        run: pacman -Syu --noconfirm git github-cli
+        run: |
+          pacman -Syu --noconfirm git github-cli
+          printf '%s\n' \
+            'PACKAGER="lyrka-meow <221443219+lyrka-meow@users.noreply.github.com>"' \
+            >> /etc/makepkg.conf
 
       - name: Check out source
         uses: actions/checkout@v7
@@ -43,8 +72,12 @@ jobs:
             -name 'ubuntu-shell-*.pkg.tar.zst' -print -quit)"
           test -n "$package_path"
           test -f "$package_path"
+          checksum_path="${package_path}.sha256"
+          sha256sum "$(basename "$package_path")" > "$checksum_path"
+          sha256sum --check "$checksum_path"
           echo "path=$package_path" >> "$GITHUB_OUTPUT"
           echo "name=$(basename "$package_path")" >> "$GITHUB_OUTPUT"
+          echo "checksum_path=$checksum_path" >> "$GITHUB_OUTPUT"
 
       - name: Inspect package
         run: |
@@ -58,7 +91,9 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.build.outputs.name }}
-          path: ${{ steps.build.outputs.path }}
+          path: |
+            ${{ steps.build.outputs.path }}
+            ${{ steps.build.outputs.checksum_path }}
           if-no-files-found: error
 
       - name: Create GitHub Release and upload package
@@ -76,4 +111,5 @@ jobs:
           gh release upload "$GITHUB_REF_NAME" \
             --repo "$GITHUB_REPOSITORY" \
             '${{ steps.build.outputs.path }}' \
+            '${{ steps.build.outputs.checksum_path }}' \
             --clobber
