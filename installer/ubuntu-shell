@@ -63,8 +63,6 @@ require_docker() {
     exit 1
   fi
 
-  echo "Preparing Docker access for this session." >&2
-
   if ! systemctl is-active --quiet docker.service ||
     ! systemctl is-enabled --quiet docker.service; then
     if ! sudo systemctl enable --now docker.service; then
@@ -84,14 +82,12 @@ require_docker() {
       echo "Could not grant Docker access to $current_user." >&2
       exit 1
     fi
-    echo "Docker access was enabled for $current_user." >&2
   fi
 
   if [[ "$(id -u)" -ne 0 ]] &&
     id -nG "$current_user" | tr ' ' '\n' | grep -qx docker; then
     export UBUNTU_SHELL_COMMAND="$command_name"
     export UBUNTU_SHELL_SCRIPT="$SCRIPT_PATH"
-    echo "Activating Docker access; later logins will not need this step." >&2
     if newgrp docker -c \
       'exec /usr/bin/bash "$UBUNTU_SHELL_SCRIPT" "$UBUNTU_SHELL_COMMAND"'; then
       exit 0
@@ -108,6 +104,7 @@ start_container() {
   local build_options=()
   local config_hash
   local image_hash
+  local start_output
 
   config_hash="$(
     sha256sum "$INSTALL_DIR/Dockerfile" "$INSTALL_DIR/compose.yaml" |
@@ -130,7 +127,13 @@ start_container() {
     echo "Building the Ubuntu Shell image for the first launch..." >&2
   fi
 
-  if ! "${COMPOSE[@]}" up -d "${build_options[@]}"; then
+  if [[ "${build_options[0]}" == --no-build ]]; then
+    if ! start_output="$("${COMPOSE[@]}" up -d --no-build 2>&1)"; then
+      echo "$start_output" >&2
+      echo "Could not start the Ubuntu Shell container." >&2
+      exit 1
+    fi
+  elif ! "${COMPOSE[@]}" up -d --build; then
     echo "Could not start the Ubuntu Shell container." >&2
     exit 1
   fi
@@ -162,6 +165,14 @@ COMPOSE=(
 case "$command_name" in
   shell)
     start_container
+    if ! "${COMPOSE[@]}" exec -T ubuntu \
+      touch /home/ubuntu/.sudo_as_admin_successful; then
+      echo "Could not prepare the Ubuntu Shell home directory." >&2
+      exit 1
+    fi
+    if [[ -t 1 ]]; then
+      printf '\033[2J\033[H'
+    fi
     exec "${COMPOSE[@]}" exec ubuntu bash
     ;;
   start)

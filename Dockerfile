@@ -18,6 +18,8 @@ RUN apt-get update \
         vim-tiny \
     && rm -rf /var/lib/apt/lists/* \
     && (id -u ubuntu >/dev/null 2>&1 || useradd --create-home --shell /bin/bash ubuntu) \
+    && touch /home/ubuntu/.sudo_as_admin_successful \
+    && chown ubuntu:ubuntu /home/ubuntu/.sudo_as_admin_successful \
     && echo "ubuntu ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/ubuntu \
     && chmod 0440 /etc/sudoers.d/ubuntu \
     && curl -fsSL \
