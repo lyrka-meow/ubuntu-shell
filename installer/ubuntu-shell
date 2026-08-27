@@ -166,7 +166,7 @@ case "$command_name" in
   shell)
     start_container
     if ! "${COMPOSE[@]}" exec -T ubuntu \
-      touch /home/ubuntu/.sudo_as_admin_successful; then
+      touch /home/ubuntu/.sudo_as_admin_successful </dev/null; then
       echo "Could not prepare the Ubuntu Shell home directory." >&2
       exit 1
     fi
