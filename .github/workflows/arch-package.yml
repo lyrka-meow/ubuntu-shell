@@ -23,8 +23,9 @@ jobs:
 
       - name: Verify access from a session without supplementary groups
         run: |
-          sudo setpriv --reuid="$(id -u)" --regid="$(id -g)" \
-            --clear-groups ./installer/ubuntu-shell status
+          sudo env HOME="$HOME" USER="$USER" LOGNAME="$LOGNAME" \
+            setpriv --reuid="$(id -u)" --regid="$(id -g)" \
+              --clear-groups ./installer/ubuntu-shell status
 
       - name: Verify container
         run: |
