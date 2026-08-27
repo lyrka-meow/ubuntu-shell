@@ -12,7 +12,6 @@ else
   INSTALL_DIR="$SYSTEM_INSTALL_DIR"
 fi
 
-DOCKER=(docker)
 COMPOSE=()
 
 usage() {
@@ -64,7 +63,7 @@ require_docker() {
     exit 1
   fi
 
-  echo "Ubuntu Shell needs one-time Docker setup." >&2
+  echo "Preparing Docker access for this session." >&2
 
   if ! systemctl is-active --quiet docker.service ||
     ! systemctl is-enabled --quiet docker.service; then
@@ -88,10 +87,17 @@ require_docker() {
     echo "Docker access was enabled for $current_user." >&2
   fi
 
-  if [[ "$(id -u)" -ne 0 ]] && sudo docker info >/dev/null 2>&1; then
-    DOCKER=(sudo docker)
-    echo "Using sudo for this session; later logins will not need it." >&2
-    return
+  if [[ "$(id -u)" -ne 0 ]] &&
+    id -nG "$current_user" | tr ' ' '\n' | grep -qx docker; then
+    export UBUNTU_SHELL_COMMAND="$command_name"
+    export UBUNTU_SHELL_SCRIPT="$SCRIPT_PATH"
+    echo "Activating Docker access; later logins will not need this step." >&2
+    if newgrp docker -c \
+      'exec /usr/bin/bash "$UBUNTU_SHELL_SCRIPT" "$UBUNTU_SHELL_COMMAND"'; then
+      exit 0
+    fi
+    echo "Could not activate the Docker group for this session." >&2
+    exit 1
   fi
 
   echo "Docker is still unavailable after setup." >&2
@@ -99,10 +105,16 @@ require_docker() {
 }
 
 start_container() {
-  local start_output
+  local build_options=()
 
-  if ! start_output="$("${COMPOSE[@]}" up -d --build 2>&1)"; then
-    echo "$start_output" >&2
+  if "${COMPOSE[@]}" images --quiet ubuntu | grep -q .; then
+    build_options+=(--quiet-build)
+  else
+    echo "Building the Ubuntu Shell image for the first launch..." >&2
+  fi
+
+  if ! "${COMPOSE[@]}" up -d --build "${build_options[@]}"; then
+    echo "Could not start the Ubuntu Shell container." >&2
     exit 1
   fi
 }
@@ -125,7 +137,7 @@ esac
 require_installation
 require_docker
 COMPOSE=(
-  "${DOCKER[@]}" compose
+  docker compose
   --project-name ubuntu-shell
   --file "$INSTALL_DIR/compose.yaml"
 )

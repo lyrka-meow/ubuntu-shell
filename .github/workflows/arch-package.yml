@@ -21,6 +21,11 @@ jobs:
       - name: Start Ubuntu Shell
         run: ./installer/ubuntu-shell start
 
+      - name: Verify access from a session without supplementary groups
+        run: |
+          sudo setpriv --reuid="$(id -u)" --regid="$(id -g)" \
+            --clear-groups ./installer/ubuntu-shell status
+
       - name: Verify container
         run: |
           docker compose --project-name ubuntu-shell exec -T ubuntu bash -lc '
@@ -29,6 +34,11 @@ jobs:
             sudo -n true
             fastfetch --version
           '
+
+      - name: Verify interactive shell
+        run: |
+          printf 'exit\n' | timeout 30s script --quiet --return \
+            --command './installer/ubuntu-shell' /dev/null
 
       - name: Clean up container
         if: always()

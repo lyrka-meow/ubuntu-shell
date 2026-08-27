@@ -9,7 +9,7 @@ Download the latest `ubuntu-shell-*.pkg.tar.zst` file from
 install it with pacman:
 
 ```bash
-sudo pacman -U ./ubuntu-shell-1.0.3-1-x86_64.pkg.tar.zst
+sudo pacman -U ./ubuntu-shell-1.0.4-1-x86_64.pkg.tar.zst
 ```
 
 Open the Ubuntu shell:
@@ -20,10 +20,11 @@ ubuntu-shell
 
 Docker and the Docker Compose plugin are installed automatically as package
 dependencies. On first launch, Ubuntu Shell starts Docker and grants the current
-user access; this may ask for the sudo password. It works immediately using
-`sudo docker`, and later login sessions no longer need sudo. The first launch
-also builds the Ubuntu image and can take a few minutes. Later launches reuse
-Docker's build cache.
+user access; this may ask for the sudo password. It works immediately in a
+temporary Docker group session, and later login sessions inherit that access
+normally. The first launch also builds the Ubuntu image and can take a few
+minutes. Build progress is shown in the terminal. Later launches reuse Docker's
+build cache.
 
 ## Commands
 
@@ -66,7 +67,7 @@ available for a later reinstall.
 
 ## Build the Arch package
 
-Release packages are built automatically when a tag such as `v1.0.3` is
+Release packages are built automatically when a tag such as `v1.0.4` is
 pushed. To build the package manually from a tagged checkout:
 
 ```bash
@@ -75,7 +76,7 @@ makepkg --syncdeps --cleanbuild
 ```
 
 The resulting file is named like
-`ubuntu-shell-1.0.3-1-x86_64.pkg.tar.zst`.
+`ubuntu-shell-1.0.4-1-x86_64.pkg.tar.zst`.
 
 ## Run from source
 
